@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>マルチプレイヤー・ブラックジャック</title>
+    <style>
+        body { font-family: sans-serif; background-color: #0a3d20; color: white; text-align: center; }
+        #udemy-logo { position: absolute; top: 20px; right: 20px; width: 120px; background-color: white; padding: 5px; border: 2px solid white; border-radius: 8px; box-sizing: border-box; }
+        .container { max-width: 800px; margin: auto; padding: 20px; }
+        
+        /* ロビースタイル */
+        #lobby-container { background-color: rgba(0,0,0,0.3); border-radius: 10px; padding: 30px; }
+        #lobby-container h1 { margin-top: 0; }
+        .lobby-form input { font-size: 18px; padding: 10px; margin: 5px; border-radius: 5px; border: 1px solid #ccc; width: 80%; max-width: 300px; }
+        .lobby-form button { font-size: 18px; padding: 10px 20px; margin: 10px 5px; cursor: pointer; border-radius: 5px; border: none; background-color: #4CAF50; color: white; }
+        .separator { margin: 20px auto; width: 80%; border-bottom: 1px solid #555; }
+
+        /* ゲームスタイル */
+        #game-container { display: none; }
+        #game-info { background-color: rgba(0,0,0,0.2); padding: 5px 15px; border-radius: 5px; display: inline-block; margin-bottom: 10px; }
+        .hand { display: flex; justify-content: center; gap: 10px; min-height: 120px; }
+        .card { width: 80px; height: 110px; border: 1px solid white; border-radius: 8px; background-color: white; color: black; display: flex; flex-direction: column; justify-content: space-between; padding: 5px; font-size: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .card.red { color: red; }
+        .card-value { font-weight: bold; }
+        .card-suit { font-size: 30px; }
+        .player-area { border: 2px solid #ccc; border-radius: 10px; padding: 15px; margin-bottom: 20px; background-color: rgba(255, 255, 255, 0.1); }
+        .my-area { border-color: #ffd700; }
+        .player-info { display: flex; justify-content: space-around; font-weight: bold; }
+        h2, h3 { margin: 10px 0; }
+        button { font-size: 18px; padding: 10px 20px; margin: 5px; cursor: pointer; border-radius: 5px; border: none; }
+        button:disabled { background-color: #888; cursor: not-allowed; }
+        #game-controls button { background-color: #4CAF50; color: white; }
+        #betting-controls, #action-controls { padding: 10px; }
+        #betting-controls input { font-size: 18px; width: 100px; padding: 10px; text-align: center; }
+        #action-controls button { background-color: #008CBA; color: white; }
+        #double-down-btn { background-color: #f44336; } /* ダブルダウンボタンの色 */
+        #countdown-timer { font-size: 1.2em; color: #ffc107; height: 30px; }
+        footer { margin-top: 40px; padding: 10px; font-size: 20px; font-weight: bold; color: #ccc; }
+    </style>
+</head>
+<body>
+    <a href="https://www.udemy.com/" target="_blank">
+        <img src="https://www.udemy.com/staticx/udemy/images/v7/logo-udemy.svg" alt="Udemy Logo" id="udemy-logo">
+    </a>
+    
+    <div id="lobby-container" class="container">
+        <h1>ブラックジャックへようこそ</h1>
+        <div class="lobby-form">
+            <input type="text" id="player-name" placeholder="名前を入力してください" required>
+            <hr class="separator">
+            <button id="create-room">新しいルームを作成</button>
+            <hr class="separator">
+            <input type="text" id="room-id" placeholder="ルームIDを入力">
+            <button id="join-room">ルームに参加</button>
+        </div>
+    </div>
+
+    <div id="game-container" class="container">
+        <div id="game-info">
+            <span id="room-id-display"></span> | <span id="round-info"></span> | <span id="player-count"></span>
+        </div>
+        <div id="countdown-timer"></div>
+
+        <div id="game-controls">
+            <button id="start-game">ゲームを開始</button>
+        </div>
+
+        <div id="dealer-area">
+            <h2>ディーラー</h2>
+            <div id="dealer-hand" class="hand"></div>
+            <h3 id="dealer-score"></h3>
+        </div>
+        <hr>
+        <div id="players-area"></div>
+
+        <div id="betting-controls">
+            <h3>ベットしてください</h3>
+            <input type="number" id="bet-amount" value="100" min="10">
+            <button id="place-bet-btn">ベットする</button>
+        </div>
+
+        <div id="action-controls">
+            <button id="hit-btn">ヒット</button>
+            <button id="stand-btn">スタンド</button>
+            <button id="double-down-btn">ダブルダウン</button>
+        </div>
+    </div>
+
+    <footer>
+        <p>udemyで作りました</p>
+    </footer>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="client.js"></script>
+</body>
+</html>
