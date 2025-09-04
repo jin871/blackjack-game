@@ -6,6 +6,7 @@ const playerNameInput = document.getElementById('player-name');
 const createRoomBtn = document.getElementById('create-room');
 const roomIdInput = document.getElementById('room-id');
 const joinRoomBtn = document.getElementById('join-room');
+
 const gameContainer = document.getElementById('game-container');
 const roomIdDisplay = document.getElementById('room-id-display');
 const roundInfoSpan = document.getElementById('round-info');
@@ -23,9 +24,13 @@ const actionControls = document.getElementById('action-controls');
 const betAmountInput = document.getElementById('bet-amount');
 const placeBetBtn = document.getElementById('place-bet-btn');
 
+// ★★追加★★ ランキング要素
+const rankingOverlay = document.getElementById('ranking-overlay');
+const rankingList = document.getElementById('ranking-list');
+const backToLobbyBtn = document.getElementById('back-to-lobby-btn');
+
 let myId = null;
 let countdownInterval = null;
-let currentRoomId = null;
 
 function createCardHTML(card) {
     const isRed = card.suit === '♥' || card.suit === '♦';
@@ -36,7 +41,6 @@ function createCardHTML(card) {
 
 function renderGame(gameState) {
     const { players, dealer, gamePhase, currentRound, maxRounds, roomId, creatorId } = gameState;
-    currentRoomId = roomId;
 
     roomIdDisplay.textContent = `ルームID: ${roomId}`;
     roundInfoSpan.textContent = `ラウンド ${currentRound} / ${maxRounds}`;
@@ -45,7 +49,6 @@ function renderGame(gameState) {
     dealerHandDiv.innerHTML = dealer.hand.map(createCardHTML).join('');
     dealerScoreH3.textContent = `スコア: ${dealer.score}`;
 
-    // ★★変更★★ 全員の盤面を描画するように変更（観戦モードのため）
     playersAreaDiv.innerHTML = '';
     for (const id in players) {
         const player = players[id];
@@ -131,6 +134,11 @@ hitBtn.addEventListener('click', () => socket.emit('hit'));
 standBtn.addEventListener('click', () => socket.emit('stand'));
 doubleDownBtn.addEventListener('click', () => socket.emit('doubleDown'));
 
+// ★★追加★★ ロビーに戻るボタンの操作
+backToLobbyBtn.addEventListener('click', () => {
+    location.reload();
+});
+
 // サーバーからのイベント受信
 socket.on('connect', () => { myId = socket.id; });
 
@@ -144,15 +152,27 @@ socket.on('gameState', (gameState) => {
     if (gameContainer.style.display === 'block') renderGame(gameState);
 });
 
-// ★★変更★★ 2種類のタイマーを処理
 socket.on('nextRoundTimer', (duration) => startCountdown(duration, '次のラウンドまで'));
 socket.on('bettingTimer', (duration) => startCountdown(duration, 'ベット時間'));
 
-socket.on('gameOver', (data) => {
+// ★★変更★★ gameOverをfinalRankingに変更
+socket.on('finalRanking', (leaderboard) => {
+    gameContainer.style.display = 'none'; // ゲーム画面を隠す
+    
+    rankingList.innerHTML = ''; // ランキングリストをクリア
+    leaderboard.forEach((player, index) => {
+        const rank = index + 1;
+        const li = document.createElement('li');
+        // ランキング、名前、チップ数を表示
+        li.innerHTML = `<span class="rank">${rank}位</span> <span class="name">${player.name}</span> <span class="chips">💰 ${player.chips}</span>`;
+        rankingList.appendChild(li);
+    });
+
+    rankingOverlay.style.display = 'flex'; // ランキング画面を表示
+});
+
+socket.on('gameOverMessage', (data) => {
     alert(data.message);
-    countdownTimerDiv.innerHTML = 'ゲーム終了！';
-    bettingControls.style.display = 'none';
-    actionControls.style.display = 'none';
 });
 
 socket.on('error', (message) => alert(`エラー: ${message}`));

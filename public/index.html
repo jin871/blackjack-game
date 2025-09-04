@@ -7,101 +7,118 @@
     <style>
         body { font-family: sans-serif; background-color: #0a3d20; color: white; text-align: center; margin: 0; padding: 0; display: flex; flex-direction: column; min-height: 100vh; }
         
-        #udemy-link-container {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            z-index: 10; /* 他の要素より手前に表示 */
-        }
-        #udemy-link-container span {
-            font-weight: bold;
-            color: #fff;
-            text-shadow: 1px 1px 2px black;
-        }
-        #udemy-logo { 
-            width: 120px;
-            background-color: white; 
-            padding: 5px; 
-            border: 2px solid white; 
-            border-radius: 8px; 
-            box-sizing: border-box; 
-            display: block;
-        }
+        #udemy-link-container { position: absolute; top: 10px; right: 10px; display: flex; align-items: center; gap: 10px; z-index: 10; }
+        #udemy-link-container span { font-weight: bold; color: #fff; text-shadow: 1px 1px 2px black; }
+        #udemy-logo { width: 120px; background-color: white; padding: 5px; border: 2px solid white; border-radius: 8px; box-sizing: border-box; display: block; }
 
-        .container { max-width: 800px; margin: auto; padding: 20px; flex-grow: 1; display: flex; flex-direction: column; }
+        .container { max-width: 800px; margin: auto; padding: 20px; flex-grow: 1; display: flex; flex-direction: column; width: 90%; }
         
-        /* ロビースタイル */
         #lobby-container { background-color: rgba(0,0,0,0.3); border-radius: 10px; padding: 30px; }
         #lobby-container h1 { margin-top: 0; }
         .lobby-form input { font-size: 18px; padding: 10px; margin: 5px; border-radius: 5px; border: 1px solid #ccc; width: 80%; max-width: 300px; }
         .lobby-form button { font-size: 18px; padding: 10px 20px; margin: 10px 5px; cursor: pointer; border-radius: 5px; border: none; background-color: #4CAF50; color: white; }
         .separator { margin: 20px auto; width: 80%; border-bottom: 1px solid #555; }
 
-        /* ゲームスタイル */
         #game-container { display: none; }
         #game-info { background-color: rgba(0,0,0,0.2); padding: 5px 15px; border-radius: 5px; display: inline-block; margin-bottom: 10px; }
         
-        /* ★★変更★★ カードのサイズを小さく、手札の表示をコンパクトに */
         .hand { display: flex; justify-content: center; gap: 5px; min-height: 80px; flex-wrap: wrap; }
         .card { width: 60px; height: 85px; border: 1px solid white; border-radius: 5px; background-color: white; color: black; display: flex; flex-direction: column; justify-content: space-between; padding: 3px; font-size: 16px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         .card.red { color: red; }
         .card-value { font-weight: bold; }
         .card-suit { font-size: 24px; }
 
-        /* ★★変更★★ 各プレイヤーエリアのスタイルをコンパクトに */
-        .player-area { 
-            border: 2px solid #ccc; 
-            border-radius: 8px; /* 角を少し丸める */
-            padding: 5px 10px; /* パディングを減らす */
-            margin-bottom: 10px; /* マージンを減らす */
-            background-color: rgba(255, 255, 255, 0.1); 
-            font-size: 0.9em; /* 文字を少し小さく */
-        }
-        .my-area { 
-            border-color: #ffd700; 
-            order: -1; /* 自分を一番上に表示 */
-            background-color: rgba(255, 255, 255, 0.2); /* 自分のエリアを少し明るく */
-            margin-bottom: 15px;
-        }
-        .player-info { display: flex; justify-content: space-around; font-weight: bold; margin-bottom: 5px; }
-        .player-area h3 { margin: 5px 0; font-size: 1.1em; } /* h3のサイズ調整 */
-        .player-area h4 { margin: 3px 0; font-size: 1em; } /* h4のサイズ調整 */
-
-        /* ★★追加★★ プレイヤーエリア全体をスクロール可能にする */
-        #players-area {
-            max-height: 250px; /* 高さを固定 */
-            overflow-y: auto; /* 縦方向にスクロール可能にする */
-            margin-bottom: 15px;
-            padding-right: 5px; /* スクロールバーとの隙間 */
-        }
-        /* スクロールバーのスタイル（任意） */
+        #main-play-area { display: flex; gap: 20px; align-items: flex-start; margin-top: 15px; }
+        
+        #players-area { flex-grow: 1; max-height: 350px; overflow-y: auto; padding-right: 5px; }
         #players-area::-webkit-scrollbar { width: 8px; }
         #players-area::-webkit-scrollbar-thumb { background-color: #888; border-radius: 4px; }
         #players-area::-webkit-scrollbar-track { background-color: #333; }
 
+        .player-area { border: 2px solid #ccc; border-radius: 8px; padding: 5px 10px; margin-bottom: 10px; background-color: rgba(255, 255, 255, 0.1); font-size: 0.9em; }
+        .my-area { border-color: #ffd700; order: -1; background-color: rgba(255, 255, 255, 0.2); margin-bottom: 15px; }
+        .player-info { display: flex; justify-content: space-around; font-weight: bold; margin-bottom: 5px; }
+        .player-area h3 { margin: 5px 0; font-size: 1.1em; }
+        .player-area h4 { margin: 3px 0; font-size: 1em; }
+        
+        #controls-container { min-width: 220px; flex-shrink: 0; }
 
+        h1 { font-size: 1.8em; }
         h2, h3 { margin: 10px 0; }
-        button { font-size: 18px; padding: 10px 20px; margin: 5px; cursor: pointer; border-radius: 5px; border: none; }
+        button { font-size: 16px; padding: 10px 15px; margin: 5px; cursor: pointer; border-radius: 5px; border: none; width: 100%; box-sizing: border-box; }
         button:disabled { background-color: #888; cursor: not-allowed; }
-        #game-controls button { background-color: #4CAF50; color: white; }
-        #betting-controls, #action-controls { padding: 10px; background-color: rgba(0,0,0,0.3); border-radius: 10px; margin-top: 10px; }
+
+        #game-controls button { background-color: #4CAF50; color: white; width: auto; }
+        #betting-controls, #action-controls { padding: 15px; background-color: rgba(0,0,0,0.3); border-radius: 10px; margin-top: 0; margin-bottom: 10px; }
         #betting-controls h3 { margin-top: 5px; margin-bottom: 10px; }
-        #betting-controls input { font-size: 18px; width: 100px; padding: 10px; text-align: center; margin-right: 10px; }
+        #betting-controls input { font-size: 16px; width: 100%; padding: 10px; text-align: center; margin-bottom: 10px; box-sizing: border-box; }
         #action-controls button { background-color: #008CBA; color: white; }
         #double-down-btn { background-color: #f44336; }
         #countdown-timer { font-size: 1.2em; color: #ffc107; height: 30px; margin-bottom: 10px; }
 
-        /* ★★変更★★ フッターの文字をさらに大きくする */
-        footer { 
-            margin-top: auto; /* フッターを常に下部に配置 */
-            padding: 10px; 
-            font-size: 24px;
-            font-weight: bold; 
-            color: #ccc; 
-            background-color: rgba(0,0,0,0.3);
+        footer { margin-top: auto; padding: 10px; font-size: 20px; font-weight: bold; color: #ccc; background-color: rgba(0,0,0,0.3); }
+
+        /* ★★追加★★ ランキング画面のスタイル */
+        #ranking-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: none; /* 最初は非表示 */
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+        #ranking-box {
+            background-color: #1a4a2a;
+            padding: 20px 30px;
+            border-radius: 15px;
+            border: 3px solid #ffd700;
+            width: 100%;
+            max-width: 500px;
+        }
+        #ranking-list {
+            list-style: none;
+            padding: 0;
+        }
+        #ranking-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 8px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            font-size: 1.2em;
+        }
+        #ranking-list li .rank { font-weight: bold; margin-right: 15px; }
+        #ranking-list li .name { flex-grow: 1; text-align: left; }
+        #ranking-list li .chips { font-weight: bold; }
+
+        #ranking-list li:first-child { background-color: #ffd700; color: black; font-weight: bold; }
+        #ranking-list li:nth-child(2) { background-color: #c0c0c0; color: black; }
+        #ranking-list li:nth-child(3) { background-color: #cd7f32; color: black; }
+        
+        #back-to-lobby-btn { width: auto; padding: 10px 30px; margin-top: 20px; background-color: #008CBA; color: white; }
+
+        @media (max-width: 768px) {
+            .container { width: 95%; padding: 10px; }
+            #main-play-area { flex-direction: column; }
+            #controls-container { width: 100%; min-width: unset; }
+            #players-area { width: 100%; max-height: 200px; }
+            h1 { font-size: 1.5em; }
+            button, .lobby-form input { font-size: 14px; }
+            .card { width: 50px; height: 70px; font-size: 12px; }
+            .card-suit { font-size: 18px; }
+            .hand { min-height: 75px; }
+            footer { font-size: 16px; }
+            #udemy-link-container { gap: 5px; top: 5px; right: 5px; }
+            #udemy-link-container span { font-size: 12px; display: none; }
+            #udemy-logo { width: 80px; }
         }
     </style>
 </head>
@@ -137,20 +154,32 @@
             <h3 id="dealer-score"></h3>
         </div>
         <hr>
-        <div id="players-area"></div>
-        <div id="betting-controls">
-            <h3>ベットしてください</h3>
-            <input type="number" id="bet-amount" value="100" min="10">
-            <button id="place-bet-btn">ベットする</button>
-        </div>
-        <div id="action-controls">
-            <button id="hit-btn">ヒット</button>
-            <button id="stand-btn">スタンド</button>
-            <button id="double-down-btn">ダブルダウン</button>
+        <div id="main-play-area">
+            <div id="players-area"></div>
+            <div id="controls-container">
+                <div id="betting-controls">
+                    <h3>ベットしてください</h3>
+                    <input type="number" id="bet-amount" value="100" min="10">
+                    <button id="place-bet-btn">ベットする</button>
+                </div>
+                <div id="action-controls">
+                    <button id="hit-btn">ヒット</button>
+                    <button id="stand-btn">スタンド</button>
+                    <button id="double-down-btn">ダブルダウン</button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <footer><p>udemyで作りました!</p></footer>
+    <div id="ranking-overlay">
+        <div id="ranking-box">
+            <h2>最終結果ランキング</h2>
+            <ol id="ranking-list"></ol>
+            <button id="back-to-lobby-btn">ロビーに戻る</button>
+        </div>
+    </div>
+
+    <footer><p>udemyで作りました！</p></footer>
     <script src="/socket.io/socket.io.js"></script>
     <script src="client.js"></script>
 </body>
