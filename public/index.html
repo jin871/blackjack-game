@@ -6,7 +6,34 @@
     <title>マルチプレイヤー・ブラックジャック</title>
     <style>
         body { font-family: sans-serif; background-color: #0a3d20; color: white; text-align: center; }
-        #udemy-logo { position: absolute; top: 20px; right: 20px; width: 120px; background-color: white; padding: 5px; border: 2px solid white; border-radius: 8px; box-sizing: border-box; }
+        
+        /* ★★変更★★ ロゴと案内テキストをまとめるコンテナのスタイル */
+        #udemy-link-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px; /* テキストとロゴの間隔 */
+        }
+        /* ★★追加★★ 案内テキストのスタイル */
+        #udemy-link-container span {
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 1px 1px 2px black; /* 文字を読みやすくする影 */
+        }
+
+        /* ★★変更★★ ロゴ自体の位置指定は不要になったので削除 */
+        #udemy-logo { 
+            width: 120px;
+            background-color: white; 
+            padding: 5px; 
+            border: 2px solid white; 
+            border-radius: 8px; 
+            box-sizing: border-box; 
+            display: block; /* リンクのクリック範囲を広げるため */
+        }
+
         .container { max-width: 800px; margin: auto; padding: 20px; }
         
         /* ロビースタイル */
@@ -34,15 +61,26 @@
         #betting-controls, #action-controls { padding: 10px; }
         #betting-controls input { font-size: 18px; width: 100px; padding: 10px; text-align: center; }
         #action-controls button { background-color: #008CBA; color: white; }
-        #double-down-btn { background-color: #f44336; } /* ダブルダウンボタンの色 */
+        #double-down-btn { background-color: #f44336; }
         #countdown-timer { font-size: 1.2em; color: #ffc107; height: 30px; }
-        footer { margin-top: 40px; padding: 10px; font-size: 20px; font-weight: bold; color: #ccc; }
+
+        /* ★★変更★★ フッターの文字をさらに大きくする */
+        footer { 
+            margin-top: 40px; 
+            padding: 10px; 
+            font-size: 24px; /* 20pxから24pxに変更 */
+            font-weight: bold; 
+            color: #ccc; 
+        }
     </style>
 </head>
 <body>
-    <a href="https://www.udemy.com/" target="_blank">
-        <img src="https://www.udemy.com/staticx/udemy/images/v7/logo-udemy.svg" alt="Udemy Logo" id="udemy-logo">
-    </a>
+    <div id="udemy-link-container">
+        <span>サイトはこちらから →</span>
+        <a href="https://www.udemy.com/" target="_blank">
+            <img src="https://www.udemy.com/staticx/udemy/images/v7/logo-udemy.svg" alt="Udemy Logo" id="udemy-logo">
+        </a>
+    </div>
     
     <div id="lobby-container" class="container">
         <h1>ブラックジャックへようこそ</h1>
@@ -88,7 +126,7 @@
     </div>
 
     <footer>
-        <p>udemyで作りました</p>
+        <p>udemyで作りました!</p>
     </footer>
 
     <script src="/socket.io/socket.io.js"></script>
