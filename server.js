@@ -11,7 +11,7 @@ const VALUES = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'
 const STARTING_CHIPS = 1000;
 const MINIMUM_BET = 10;
 const ROUND_END_TIMER = 10000;
-const BETTING_TIMER = 20000; // ★★追加★★ ベット時間は20秒
+const BETTING_TIMER = 20000;
 
 let games = {};
 
@@ -106,10 +106,8 @@ function startBettingPhase(roomId) {
         return;
     }
 
-    // ★★追加★★ ベットタイマーを開始
     io.to(roomId).emit('bettingTimer', BETTING_TIMER);
     game.bettingTimeout = setTimeout(() => {
-        // 時間内にベットしなかったプレイヤーをフォールドさせる
         for (const id in game.players) {
             if (game.players[id].status === 'betting') {
                 game.players[id].status = 'folded';
@@ -236,7 +234,6 @@ io.on('connection', (socket) => {
             player.status = 'betPlaced';
             updateGameState(roomId);
             
-            // ★★変更★★ アクティブプレイヤー全員がベットしたら即座にカードを配る
             const activePlayers = Object.values(game.players).filter(p => p.status !== 'out' && p.status !== 'folded');
             const allActivePlayersBet = activePlayers.every(p => p.status === 'betPlaced');
             if(allActivePlayersBet) {
@@ -245,6 +242,9 @@ io.on('connection', (socket) => {
         }
     });
 
+    // ★★ここから修正★★
+    // 'hit', 'stand', 'doubleDown'イベントが、どのルームから来たかを
+    // socketオブジェクトに保存されたroomIdから判断するようにします。
     socket.on('hit', () => {
         const roomId = socket.roomId;
         const game = games[roomId];
@@ -288,6 +288,7 @@ io.on('connection', (socket) => {
             else updateGameState(roomId);
         }
     });
+    // ★★修正ここまで★★
 
     socket.on('disconnect', () => {
         const roomId = socket.roomId;
