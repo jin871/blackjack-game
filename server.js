@@ -9,7 +9,8 @@ const io = socketIo(server);
 const SUITS = ['♥', '♦', '♣', '♠'];
 const VALUES = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 const STARTING_CHIPS = 1000;
-const ROUND_END_TIMER = 10000; // 10 seconds
+const MINIMUM_BET = 10; // ★★追加★★ 最低ベット額
+const ROUND_END_TIMER = 10000;
 
 let games = {};
 
@@ -17,15 +18,10 @@ app.use(express.static('public'));
 
 function createNewGameState(roomId, creatorId) {
     return {
-        roomId,
-        creatorId,
-        players: {},
-        deck: [],
+        roomId, creatorId, players: {}, deck: [],
         dealer: { hand: [], score: 0 },
-        gamePhase: 'waiting', // waiting, betting, playing, finished
-        currentRound: 0,
-        maxRounds: 10,
-        roundEndTimeout: null,
+        gamePhase: 'waiting',
+        currentRound: 0, maxRounds: 10, roundEndTimeout: null,
     };
 }
 
@@ -33,19 +29,11 @@ function calculateScore(hand) {
     let score = 0;
     let aceCount = 0;
     for (let card of hand) {
-        if (card.value === 'A') {
-            aceCount++;
-            score += 11;
-        } else if (['J', 'Q', 'K'].includes(card.value)) {
-            score += 10;
-        } else {
-            score += parseInt(card.value);
-        }
+        if (card.value === 'A') { aceCount++; score += 11; }
+        else if (['J', 'Q', 'K'].includes(card.value)) { score += 10; }
+        else { score += parseInt(card.value); }
     }
-    while (score > 21 && aceCount > 0) {
-        score -= 10;
-        aceCount--;
-    }
+    while (score > 21 && aceCount > 0) { score -= 10; aceCount--; }
     return score;
 }
 
@@ -92,17 +80,30 @@ function startBettingPhase(roomId) {
     game.currentRound++;
     game.gamePhase = 'betting';
     
+    let activePlayerCount = 0;
     for(const id in game.players) {
         const player = game.players[id];
         player.hand = [];
         player.score = 0;
         player.currentBet = 0;
-        player.status = 'betting';
         player.result = '';
+        
+        // ★★変更★★ チップが足りないプレイヤーはゲームオーバーにする
+        if (player.chips < MINIMUM_BET) {
+            player.status = 'out';
+        } else {
+            player.status = 'betting';
+            activePlayerCount++;
+        }
     }
     
     game.dealer = { hand: [], score: 0 };
     updateGameState(roomId);
+
+    // アクティブなプレイヤーがいない場合、ゲームを終了
+    if (activePlayerCount === 0) {
+        io.to(roomId).emit('gameOver', { message: 'プレイ可能なプレイヤーがいません。ゲームを終了します。' });
+    }
 }
 
 function dealCards(roomId) {
@@ -118,12 +119,15 @@ function dealCards(roomId) {
 
     for (let id in game.players) {
         const player = game.players[id];
-        player.hand = [game.deck.pop(), game.deck.pop()];
-        player.score = calculateScore(player.hand);
-        player.status = 'playing';
-        if (player.score === 21) {
-            player.status = 'stand';
-            player.result = 'ブラックジャック！';
+        // ベットしたプレイヤーのみカードを配る
+        if(player.status === 'betPlaced') {
+            player.hand = [game.deck.pop(), game.deck.pop()];
+            player.score = calculateScore(player.hand);
+            player.status = 'playing';
+            if (player.score === 21) {
+                player.status = 'stand';
+                player.result = 'ブラックジャック！';
+            }
         }
     }
     game.dealer.hand = [game.deck.pop(), game.deck.pop()];
@@ -223,15 +227,14 @@ io.on('connection', (socket) => {
             player.status = 'betPlaced';
             updateGameState(roomId);
             
-            const allPlayersBet = Object.values(game.players).every(p => p.status === 'betPlaced' || p.chips === 0);
+            const allPlayersBet = Object.values(game.players).every(p => p.status !== 'betting');
             if(allPlayersBet) {
                 dealCards(roomId);
             }
         }
     });
 
-    socket.on('hit', () => {
-        const roomId = socket.roomId;
+    socket.on('hit', ({ roomId }) => { // roomIdを受け取るように変更
         const game = games[roomId];
         const player = game?.players[socket.id];
 
@@ -249,8 +252,7 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('stand', () => {
-        const roomId = socket.roomId;
+    socket.on('stand', ({ roomId }) => { // roomIdを受け取るように変更
         const game = games[roomId];
         const player = game?.players[socket.id];
 
@@ -264,24 +266,16 @@ io.on('connection', (socket) => {
             }
         }
     });
-
-    // ★★追加★★ ダブルダウンの処理
-    socket.on('doubleDown', () => {
-        const roomId = socket.roomId;
+    
+    socket.on('doubleDown', ({ roomId }) => { // roomIdを受け取るように変更
         const game = games[roomId];
         const player = game?.players[socket.id];
-
-        // ダブルダウンが可能か検証
+    
         if (game && player && game.gamePhase === 'playing' && player.status === 'playing' && player.hand.length === 2 && player.chips >= player.currentBet) {
-            // ベットを2倍にする
             player.chips -= player.currentBet;
             player.currentBet *= 2;
-            
-            // カードを1枚だけ引く
             player.hand.push(game.deck.pop());
             player.score = calculateScore(player.hand);
-            
-            // バストしたか確認し、強制的にスタンド
             player.status = (player.score > 21) ? 'bust' : 'stand';
             
             const allPlayersDone = Object.values(game.players).every(p => p.status !== 'playing');
@@ -311,7 +305,5 @@ io.on('connection', (socket) => {
     });
 });
 
-const PORT = process.env.PORT || 3000; // Renderが指定するポート、なければ3000を使う
-server.listen(PORT, () => {
-    console.log(`サーバーがポート ${PORT} で起動しました`);
-});
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log(`サーバーがポート ${PORT} で起動しました`));

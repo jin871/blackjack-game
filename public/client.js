@@ -17,9 +17,9 @@ const dealerHandDiv = document.getElementById('dealer-hand');
 const dealerScoreH3 = document.getElementById('dealer-score');
 const playersAreaDiv = document.getElementById('players-area');
 const startGameBtn = document.getElementById('start-game');
-const hitBtn = document.getElementById('hit-btn'); // IDを変更
-const standBtn = document.getElementById('stand-btn'); // IDを変更
-const doubleDownBtn = document.getElementById('double-down-btn'); // ★★追加★★
+const hitBtn = document.getElementById('hit-btn');
+const standBtn = document.getElementById('stand-btn');
+const doubleDownBtn = document.getElementById('double-down-btn');
 const bettingControls = document.getElementById('betting-controls');
 const actionControls = document.getElementById('action-controls');
 const betAmountInput = document.getElementById('bet-amount');
@@ -27,6 +27,7 @@ const placeBetBtn = document.getElementById('place-bet-btn');
 
 let myId = null;
 let countdownInterval = null;
+let currentRoomId = null; // ★★追加★★
 
 function createCardHTML(card) {
     const isRed = card.suit === '♥' || card.suit === '♦';
@@ -37,6 +38,7 @@ function createCardHTML(card) {
 
 function renderGame(gameState) {
     const { players, dealer, gamePhase, currentRound, maxRounds, roomId, creatorId } = gameState;
+    currentRoomId = roomId; // ルームIDを保存
 
     // ヘッダー情報
     roomIdDisplay.textContent = `ルームID: ${roomId}`;
@@ -54,6 +56,10 @@ function renderGame(gameState) {
         const playerDiv = document.createElement('div');
         playerDiv.className = 'player-area my-area';
         let resultHTML = myPlayer.result ? `<h4>結果: ${myPlayer.result}</h4>` : '';
+        // ★★変更★★ ゲームオーバー時の表示を追加
+        if (myPlayer.status === 'out') {
+            resultHTML = `<h4>チップがなくなりゲームオーバーです</h4>`;
+        }
         playerDiv.innerHTML = `
             <h3>${myPlayer.name} (あなた) - <span class="player-status">${myPlayer.status}</span></h3>
             <div class="player-info">
@@ -71,12 +77,10 @@ function renderGame(gameState) {
     startGameBtn.style.display = (gamePhase === 'waiting' && myId === creatorId && currentRound === 0) ? 'inline-block' : 'none';
     bettingControls.style.display = (gamePhase === 'betting' && myPlayer?.status === 'betting') ? 'block' : 'none';
     
-    // ★★変更★★ アクションボタン全体の表示ロジック
     const isMyTurn = gamePhase === 'playing' && myPlayer?.status === 'playing';
     actionControls.style.display = isMyTurn ? 'block' : 'none';
     
     if (isMyTurn) {
-        // ★★追加★★ ダブルダウンボタンの表示ロジック
         const canDoubleDown = myPlayer.hand.length === 2 && myPlayer.chips >= myPlayer.currentBet;
         doubleDownBtn.style.display = canDoubleDown ? 'inline-block' : 'none';
     }
@@ -106,9 +110,17 @@ placeBetBtn.addEventListener('click', () => {
     const amount = parseInt(betAmountInput.value, 10);
     if (amount > 0) socket.emit('placeBet', { amount });
 });
-hitBtn.addEventListener('click', () => socket.emit('hit'));
-standBtn.addEventListener('click', () => socket.emit('stand'));
-doubleDownBtn.addEventListener('click', () => socket.emit('doubleDown')); // ★★追加★★
+// ★★追加★★ Enterキーでベット
+betAmountInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+        event.preventDefault(); // デフォルトのフォーム送信を防止
+        placeBetBtn.click();
+    }
+});
+
+hitBtn.addEventListener('click', () => socket.emit('hit', { roomId: currentRoomId }));
+standBtn.addEventListener('click', () => socket.emit('stand', { roomId: currentRoomId }));
+doubleDownBtn.addEventListener('click', () => socket.emit('doubleDown', { roomId: currentRoomId }));
 
 // サーバーからのイベント受信
 socket.on('connect', () => { myId = socket.id; });

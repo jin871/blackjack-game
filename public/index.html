@@ -6,44 +6,15 @@
     <title>マルチプレイヤー・ブラックジャック</title>
     <style>
         body { font-family: sans-serif; background-color: #0a3d20; color: white; text-align: center; }
-        
-        /* ★★変更★★ ロゴと案内テキストをまとめるコンテナのスタイル */
-        #udemy-link-container {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px; /* テキストとロゴの間隔 */
-        }
-        /* ★★追加★★ 案内テキストのスタイル */
-        #udemy-link-container span {
-            font-weight: bold;
-            color: #fff;
-            text-shadow: 1px 1px 2px black; /* 文字を読みやすくする影 */
-        }
-
-        /* ★★変更★★ ロゴ自体の位置指定は不要になったので削除 */
-        #udemy-logo { 
-            width: 120px;
-            background-color: white; 
-            padding: 5px; 
-            border: 2px solid white; 
-            border-radius: 8px; 
-            box-sizing: border-box; 
-            display: block; /* リンクのクリック範囲を広げるため */
-        }
-
+        #udemy-logo { position: absolute; top: 20px; right: 20px; width: 120px; background-color: white; padding: 5px; border: 2px solid white; border-radius: 8px; box-sizing: border-box; }
         .container { max-width: 800px; margin: auto; padding: 20px; }
         
-        /* ロビースタイル */
         #lobby-container { background-color: rgba(0,0,0,0.3); border-radius: 10px; padding: 30px; }
         #lobby-container h1 { margin-top: 0; }
         .lobby-form input { font-size: 18px; padding: 10px; margin: 5px; border-radius: 5px; border: 1px solid #ccc; width: 80%; max-width: 300px; }
         .lobby-form button { font-size: 18px; padding: 10px 20px; margin: 10px 5px; cursor: pointer; border-radius: 5px; border: none; background-color: #4CAF50; color: white; }
         .separator { margin: 20px auto; width: 80%; border-bottom: 1px solid #555; }
 
-        /* ゲームスタイル */
         #game-container { display: none; }
         #game-info { background-color: rgba(0,0,0,0.2); padding: 5px 15px; border-radius: 5px; display: inline-block; margin-bottom: 10px; }
         .hand { display: flex; justify-content: center; gap: 10px; min-height: 120px; }
@@ -63,15 +34,7 @@
         #action-controls button { background-color: #008CBA; color: white; }
         #double-down-btn { background-color: #f44336; }
         #countdown-timer { font-size: 1.2em; color: #ffc107; height: 30px; }
-
-        /* ★★変更★★ フッターの文字をさらに大きくする */
-        footer { 
-            margin-top: 40px; 
-            padding: 10px; 
-            font-size: 24px; /* 20pxから24pxに変更 */
-            font-weight: bold; 
-            color: #ccc; 
-        }
+        footer { margin-top: 40px; padding: 10px; font-size: 24px; font-weight: bold; color: #ccc; }
     </style>
 </head>
 <body>
@@ -99,11 +62,7 @@
             <span id="room-id-display"></span> | <span id="round-info"></span> | <span id="player-count"></span>
         </div>
         <div id="countdown-timer"></div>
-
-        <div id="game-controls">
-            <button id="start-game">ゲームを開始</button>
-        </div>
-
+        <div id="game-controls"><button id="start-game">ゲームを開始</button></div>
         <div id="dealer-area">
             <h2>ディーラー</h2>
             <div id="dealer-hand" class="hand"></div>
@@ -111,13 +70,11 @@
         </div>
         <hr>
         <div id="players-area"></div>
-
         <div id="betting-controls">
             <h3>ベットしてください</h3>
             <input type="number" id="bet-amount" value="100" min="10">
             <button id="place-bet-btn">ベットする</button>
         </div>
-
         <div id="action-controls">
             <button id="hit-btn">ヒット</button>
             <button id="stand-btn">スタンド</button>
@@ -125,10 +82,7 @@
         </div>
     </div>
 
-    <footer>
-        <p>udemyで作りました!</p>
-    </footer>
-
+    <footer><p>udemyで作りました！</p></footer>
     <script src="/socket.io/socket.io.js"></script>
     <script src="client.js"></script>
 </body>
