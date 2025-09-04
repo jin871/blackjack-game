@@ -1,11 +1,13 @@
 const socket = io();
 
-// HTML要素
+// ロビー要素
 const lobbyContainer = document.getElementById('lobby-container');
 const playerNameInput = document.getElementById('player-name');
 const createRoomBtn = document.getElementById('create-room');
 const roomIdInput = document.getElementById('room-id');
 const joinRoomBtn = document.getElementById('join-room');
+
+// ゲーム要素
 const gameContainer = document.getElementById('game-container');
 const roomIdDisplay = document.getElementById('room-id-display');
 const roundInfoSpan = document.getElementById('round-info');
@@ -25,7 +27,7 @@ const placeBetBtn = document.getElementById('place-bet-btn');
 
 let myId = null;
 let countdownInterval = null;
-let currentRoomId = null;
+let currentRoomId = null; // ★★追加★★
 
 function createCardHTML(card) {
     const isRed = card.suit === '♥' || card.suit === '♦';
@@ -36,41 +38,42 @@ function createCardHTML(card) {
 
 function renderGame(gameState) {
     const { players, dealer, gamePhase, currentRound, maxRounds, roomId, creatorId } = gameState;
-    currentRoomId = roomId;
+    currentRoomId = roomId; // ルームIDを保存
 
+    // ヘッダー情報
     roomIdDisplay.textContent = `ルームID: ${roomId}`;
     roundInfoSpan.textContent = `ラウンド ${currentRound} / ${maxRounds}`;
     playerCountSpan.textContent = `参加人数: ${Object.keys(players).length}人`;
     
+    // ディーラー
     dealerHandDiv.innerHTML = dealer.hand.map(createCardHTML).join('');
     dealerScoreH3.textContent = `スコア: ${dealer.score}`;
 
-    // ★★変更★★ 全員の盤面を描画するように変更（観戦モードのため）
+    // プレイヤー
     playersAreaDiv.innerHTML = '';
-    for (const id in players) {
-        const player = players[id];
-        const isMe = id === myId;
-
+    const myPlayer = players[myId];
+    if (myPlayer) {
         const playerDiv = document.createElement('div');
-        playerDiv.className = `player-area ${isMe ? 'my-area' : ''}`;
-        let resultHTML = player.result ? `<h4>結果: ${player.result}</h4>` : '';
-        if (player.status === 'out') {
+        playerDiv.className = 'player-area my-area';
+        let resultHTML = myPlayer.result ? `<h4>結果: ${myPlayer.result}</h4>` : '';
+        // ★★変更★★ ゲームオーバー時の表示を追加
+        if (myPlayer.status === 'out') {
             resultHTML = `<h4>チップがなくなりゲームオーバーです</h4>`;
         }
         playerDiv.innerHTML = `
-            <h3>${player.name} ${isMe ? '(あなた)' : ''} - <span class="player-status">${player.status}</span></h3>
+            <h3>${myPlayer.name} (あなた) - <span class="player-status">${myPlayer.status}</span></h3>
             <div class="player-info">
-                <span>💰 チップ: ${player.chips}</span>
-                <span>ベット: ${player.currentBet}</span>
+                <span>💰 チップ: ${myPlayer.chips}</span>
+                <span>ベット: ${myPlayer.currentBet}</span>
             </div>
-            <div class="hand">${player.hand.map(createCardHTML).join('')}</div>
-            <h3>スコア: ${player.score}</h3>
+            <div class="hand">${myPlayer.hand.map(createCardHTML).join('')}</div>
+            <h3>スコア: ${myPlayer.score}</h3>
             ${resultHTML}
         `;
         playersAreaDiv.appendChild(playerDiv);
     }
 
-    const myPlayer = players[myId];
+    // UIコントロールの表示切り替え
     startGameBtn.style.display = (gamePhase === 'waiting' && myId === creatorId && currentRound === 0) ? 'inline-block' : 'none';
     bettingControls.style.display = (gamePhase === 'betting' && myPlayer?.status === 'betting') ? 'block' : 'none';
     
@@ -82,24 +85,10 @@ function renderGame(gameState) {
         doubleDownBtn.style.display = canDoubleDown ? 'inline-block' : 'none';
     }
 
-    if (gamePhase === 'playing') {
+    if (gamePhase !== 'finished') {
         countdownTimerDiv.innerHTML = '';
         clearInterval(countdownInterval);
     }
-}
-
-function startCountdown(duration, textPrefix) {
-    let timeLeft = duration / 1000;
-    countdownTimerDiv.innerHTML = `${textPrefix} ${timeLeft} 秒...`;
-    clearInterval(countdownInterval);
-    countdownInterval = setInterval(() => {
-        timeLeft--;
-        countdownTimerDiv.innerHTML = `${textPrefix} ${timeLeft} 秒...`;
-        if (timeLeft <= 0) {
-            clearInterval(countdownInterval);
-            countdownTimerDiv.innerHTML = '時間切れ！';
-        }
-    }, 1000);
 }
 
 // ロビー操作
@@ -121,15 +110,17 @@ placeBetBtn.addEventListener('click', () => {
     const amount = parseInt(betAmountInput.value, 10);
     if (amount > 0) socket.emit('placeBet', { amount });
 });
+// ★★追加★★ Enterキーでベット
 betAmountInput.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
-        event.preventDefault();
+        event.preventDefault(); // デフォルトのフォーム送信を防止
         placeBetBtn.click();
     }
 });
-hitBtn.addEventListener('click', () => socket.emit('hit'));
-standBtn.addEventListener('click', () => socket.emit('stand'));
-doubleDownBtn.addEventListener('click', () => socket.emit('doubleDown'));
+
+hitBtn.addEventListener('click', () => socket.emit('hit', { roomId: currentRoomId }));
+standBtn.addEventListener('click', () => socket.emit('stand', { roomId: currentRoomId }));
+doubleDownBtn.addEventListener('click', () => socket.emit('doubleDown', { roomId: currentRoomId }));
 
 // サーバーからのイベント受信
 socket.on('connect', () => { myId = socket.id; });
@@ -144,9 +135,16 @@ socket.on('gameState', (gameState) => {
     if (gameContainer.style.display === 'block') renderGame(gameState);
 });
 
-// ★★変更★★ 2種類のタイマーを処理
-socket.on('nextRoundTimer', (duration) => startCountdown(duration, '次のラウンドまで'));
-socket.on('bettingTimer', (duration) => startCountdown(duration, 'ベット時間'));
+socket.on('nextRoundTimer', (duration) => {
+    let timeLeft = duration / 1000;
+    countdownTimerDiv.innerHTML = `次のラウンドまで ${timeLeft} 秒...`;
+    clearInterval(countdownInterval);
+    countdownInterval = setInterval(() => {
+        timeLeft--;
+        countdownTimerDiv.innerHTML = `次のラウンドまで ${timeLeft} 秒...`;
+        if (timeLeft <= 0) clearInterval(countdownInterval);
+    }, 1000);
+});
 
 socket.on('gameOver', (data) => {
     alert(data.message);
